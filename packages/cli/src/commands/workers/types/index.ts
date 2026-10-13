@@ -6,6 +6,6 @@ export default lazyCommand(
 	() => import("./command.js"),
 	{
 		command: "workers types",
-		classification: { safeFlags: ["include-runtime"] },
+		classification: { safeFlags: ["include-runtime", "concurrency-keys"] },
 	}
 );

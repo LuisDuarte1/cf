@@ -7,7 +7,8 @@ export default {
 	category: "action",
 	description:
 		"Generate TypeScript declarations for a Worker defined in cloudflare.config.ts.",
-	usage: "cf workers types [--include-runtime <boolean>]",
+	usage:
+		"cf workers types [--include-runtime <boolean>] [--concurrency-keys <boolean>]",
 	arguments: [],
 	options: [
 		{
@@ -15,6 +16,14 @@ export default {
 			type: "boolean",
 			required: false,
 			description: "Include Cloudflare Workers runtime types",
+			default: true,
+		},
+		{
+			name: "concurrency-keys",
+			type: "boolean",
+			required: false,
+			description:
+				"Type Workflow step concurrency keys from the account in accountId (requires a Workflow export)",
 			default: true,
 		},
 		{

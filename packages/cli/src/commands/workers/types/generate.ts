@@ -5,6 +5,7 @@ import {
 	generateRuntimeTypes,
 	RUNTIME_TYPES_MARKER,
 } from "@cloudflare/runtime-types";
+import type { ParsedInputConfig } from "@cloudflare/config";
 import { CLOUDFLARE_CONFIG_FILENAME } from "#lib/project-settings.js";
 
 export const TYPES_OUTPUT_PATH = path.join(
@@ -47,10 +48,19 @@ function importPath(fromDirectory: string, target: string): string {
 export async function generateWorkerTypes(
 	options: GenerateWorkerTypesOptions
 ): Promise<string> {
-	const { configPath } = options;
+	const config = await loadWorkerTypesConfig(options.configPath, options.mode);
+	return writeWorkerTypes({ ...options, config });
+}
+
+/** Evaluates and validates the config once, so `cf workers types` can reuse it for key types.
+ * Throws when the config is invalid or defines no Worker. */
+export async function loadWorkerTypesConfig(
+	configPath: string,
+	mode: string | undefined
+): Promise<WorkerTypesConfig> {
 	const loaded = await loadAndParseConfig(configPath, {
 		isPreview: false,
-		mode: options.mode,
+		mode,
 	});
 	if (!loaded.result.success) {
 		throw new Error(
@@ -58,12 +68,28 @@ export async function generateWorkerTypes(
 		);
 	}
 
-	const worker = loaded.result.data.worker;
-	if (worker === undefined) {
+	const config = loaded.result.data;
+	if (config.worker === undefined) {
 		throw new Error(
 			`${CLOUDFLARE_CONFIG_FILENAME} must define a Worker to generate types.`
 		);
 	}
+	return config as WorkerTypesConfig;
+}
+
+export type WorkerTypesConfig = ParsedInputConfig & {
+	worker: NonNullable<ParsedInputConfig["worker"]>;
+};
+
+/** Writes `index.d.ts` from an already loaded config and returns its absolute path.
+ * Lets `cf workers types` evaluate the config once for both index and key types. */
+export async function writeWorkerTypes(
+	options: Omit<GenerateWorkerTypesOptions, "mode"> & {
+		config: WorkerTypesConfig;
+	}
+): Promise<string> {
+	const { configPath } = options;
+	const worker = options.config.worker;
 
 	const projectRoot = path.dirname(configPath);
 	const outputPath = path.join(projectRoot, TYPES_OUTPUT_PATH);

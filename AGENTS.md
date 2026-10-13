@@ -329,6 +329,13 @@ Practical extensions of this rule:
     the nearest `cloudflare.config.ts` and generates
     `.cloudflare/types/index.d.ts`. `cf init` reuses its generator
     (`generate.ts`) for a project it has just created and installed.
+    Its one API call is contained in `workers/types/concurrency-keys.ts`: when
+    the Worker exports a Workflow and the config sets `accountId`, it lists that
+    account's Workflows concurrency keys into
+    `.cloudflare/types/concurrency-keys.d.ts`, a sibling the Vite plugin also
+    writes in the same format (`@cloudflare/config` `renderConcurrencyKeyTypes`).
+    It never prompts, and a failed lookup keeps the previous file. `cf init`
+    does not call it.
   - `cf containers build` and `cf containers push` are hand-written leaves
     added to the generated Containers tree. They wrap the shared Container
     Docker and registry helpers; there are no OpenAPI operations for local
